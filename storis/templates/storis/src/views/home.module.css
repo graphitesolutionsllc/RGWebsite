@@ -1,0 +1,42 @@
+.container {
+  width: 100%;
+  display: flex;
+  overflow: auto;
+  min-height: 100vh;
+  align-items: flex-start;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+.container1 {
+  flex: 0 0 auto;
+  width: 100%;
+  border: 2px dashed rgba(120, 120, 120, 0.4);
+  height: 100px;
+  display: flex;
+  align-items: flex-start;
+}
+.form {
+  width: 50%;
+  height: 322px;
+  position: relative;
+  align-self: center;
+  margin-top: var(--dl-space-space-fiveunits);
+  background-color: #D9D9D9;
+}
+.text {
+  margin-top: var(--dl-space-space-twounits);
+  font-family: Noto Sans TC;
+  margin-left: var(--dl-space-space-unit);
+}
+.text1 {
+  top: 120px;
+  left: 51px;
+  position: absolute;
+  align-self: stretch;
+}
+.button {
+  top: 204px;
+  left: 49px;
+  position: absolute;
+  background-color: var(--dl-color-success-500);
+}
