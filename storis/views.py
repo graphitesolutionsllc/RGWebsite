@@ -3,4 +3,13 @@ from django.http import HttpResponse
 
 
 def home(request):
-    return render(request, 'storis/public/home.html')
+    context = {
+
+    }
+    return render(request, 'storis/home.html', context)
+
+def login(request):
+    context = {
+
+    }
+    return render(request, 'storis/login.html', context)
