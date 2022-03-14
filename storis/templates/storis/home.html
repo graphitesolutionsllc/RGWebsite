@@ -20,20 +20,20 @@
 
   <body>
 
-    <header>
+    <header class="mb-5">
       <!-- Fixed navbar -->
-      <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
-        <a class="navbar-brand" href="#">Website Updater</a>
+      <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark mb-5">
+        <a class="navbar-brand" href="/">Website Updater</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarCollapse">
           <ul class="navbar-nav mr-auto">
             <li class="nav-item active">
-              <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+              <a class="nav-link" href="/storis/">Dashboard <span class="sr-only">(current)</span></a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">Settings</a>
+              <a class="nav-link" href="/storis/settings/">Settings</a>
             </li>
 
           </ul>
@@ -44,12 +44,12 @@
     </header>
 
     <!-- Begin page content -->
-    <div class="jumbotron">
+    <div class="jumbotron mx-auto" style="width: 700px; height: 350px">
         <h1 class="display-4">Website updater</h1>
         <p class="lead">Please do not judge a book by its cover.</p>
         <hr class="my-4">
         <p>Press this button to update the website</p>
-        <a class="btn btn-primary btn-lg" href="storis/singleupdate" role="button">Update website</a>
+        <a class="btn btn-primary btn-lg" href="singleUpdate/" role="button">Update website</a>
     </div>
 
     <!-- Bootstrap core JavaScript

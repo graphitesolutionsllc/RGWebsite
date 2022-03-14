@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse
+from . import functionality as FY
 
 
 def home(request):
@@ -8,8 +9,21 @@ def home(request):
     }
     return render(request, 'storis/home.html', context)
 
+
 def login(request):
     context = {
 
     }
     return render(request, 'storis/login.html', context)
+
+
+def handler404(request, exception):
+    return render(request, 'storis/404.html', {})
+
+
+def singleUpdate(request):
+    context = {
+
+    }
+    FY.fullWebsiteUpdate()
+    return render(request, 'storis/home.html', context)

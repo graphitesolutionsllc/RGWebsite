@@ -308,9 +308,35 @@ def websiteUploader():
     s = driver.find_element(by=By.XPATH, value="//*[@id='ctl00_MainContent_FileUpload']")
     s.send_keys((str(df.loc[0].epath) + "\storis " + str(current_time.month)
                 + "." + str(current_time.day) + "." + str(current_time.year)[2:4] + ".csv"))
+    time.sleep(.5)
     driver.find_element(by=By.NAME, value="ctl00$MainContent$ctl00").click()
-    time.sleep(2)
     driver.close()
+    return 0
+
+
+def closeSTORIS():
+    """
+
+    :return:
+    """
+    width, height = pg.size()
+    pg.moveTo((width / 2) - 400, height - 24)  # Screen position for STORIS
+    pg.rightClick()
+    pg.moveRel(0, -25)
+    pg.click()
+    return 0
+
+
+def fullWebsiteUpdate():
+    """
+
+    :return:
+    """
+    initilizeSTORIS()
+    runReport()
+    scrapeFiles(True)
+    websiteUploader()
+    closeSTORIS()
     return 0
 
 
@@ -422,6 +448,7 @@ def help(firstTime):
 
 def main():
     """
+
     :return:
     """
     x = 0
@@ -431,12 +458,12 @@ def main():
             selection = input(
                 "\n    " + colored("Welcome to STORIS API", 'yellow') + "\n\n ---------------------------\n"
                 "          " + (colored("MAIN MENU",'cyan')) + "\n ---------------------------\n\nI: Initialize Program\n"
-                "R: Run Auto Program\nE: Export Single Report\nM: Manual STORIS Report\nW: Website Upload\nC: Clean up STORI\nS: Settings"
+                "R: Run Auto Program\nE: Export Single Report\nM: Manual STORIS Report\nW: Website Upload\nU: Update Website\nC: Clean up STORI\nS: Settings"
                 "\nF: First Time\nH: Help\nQ: Quit\n>>")
         else:
             selection = input("\n ---------------------------\n          " + (colored("MAIN MENU", 'cyan')) +
                               "\n ---------------------------\n\nI: Initialize Program\nR: Run Auto Program"
-                              "\nE: Export Single Report\nM: Manual STORIS Report\nW: Website Upload\nC: Clean up STORIS\nS: Settings"
+                              "\nE: Export Single Report\nM: Manual STORIS Report\nW: Website Upload\nU: Update Website\nC: Clean up STORIS\nS: Settings"
                               "\nF: First Time\nH: Help\nQ: Quit\n>>")
         if selection == "Q" or selection == "q":
             print("\nQuitting")
@@ -471,6 +498,10 @@ def main():
         elif selection == "W" or selection == "w":
             print(colored("\nStarting Website Uploader...\n", 'blue'))
             websiteUploader()
+
+        elif selection == "U" or selection == "u":
+            print(colored("\nRunning full webiste update...\n", 'blue'))
+            fullWebsiteUpdate()
 
         elif selection == "H" or selection == "h":
             print(colored("\n\t\t\t\tHelp for STORIS API\n"
@@ -510,3 +541,4 @@ if __name__ == '__main__':
     """
     colorama.init()
     main()
+
