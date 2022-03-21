@@ -3,13 +3,12 @@ floorStock
 This file will provide the functionality of checking in stock and the changes that happen day to day
 this will assist in updating managers and salesman to keep the floor stickers working.
 """
+import smtplib
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
-import time
 import datetime
-import os
+import yagmail
 
 pd.options.mode.chained_assignment = None
 
@@ -45,4 +44,25 @@ def checkChanges():
     print(intoday)
     print("---------------------------\n")
     print(outtoday)
+    emailChanges(intoday, outtoday)
+    return 0
+
+def emailChanges(intoday, outtoday):
+    """
+
+    :return:
+    """
+    sent_from = "dduffy385@gmail.com"
+    to = "dmd9042@gmail.com"
+    #intoday = str(intoday['Product'].values.tolist())
+    outtoday = str(outtoday['Product'].values.tolist())
+
+    try:
+        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+        server.ehlo()
+        server.login("dduffy385@gmail.com", "Pushthebutton8*")
+        server.send(to,"Daily Stock Update", intoday.to_string(index=False))
+        server.close()
+    except:
+        print('Something went wrong...')
     return 0
