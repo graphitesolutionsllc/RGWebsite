@@ -27,6 +27,19 @@ from termcolor import colored
 import pandas as pd
 pd.options.mode.chained_assignment = None
 
+from floorstock import *
+
+
+def clickSTORIS():
+    """
+    This will click the STORIS icon in the taskbar
+    :return:
+    """
+    width, height = pg.size()
+    pg.moveTo((width / 2) - 100, height - 25)  # Screen position for STORIS
+    pg.click()
+    return 0
+
 
 def initilizeSTORIS():
     """
@@ -37,14 +50,13 @@ def initilizeSTORIS():
     print(colored("\t->Ensure STORIS is logged on to a user who have the privileges to run a report", 'blue'))
     width, height = pg.size()
     pg.moveTo(width / 2, height / 2)
-    pg.moveTo((width / 2) - 400, height - 25)  # Screen position for STORIS
-    pg.click()
+    clickSTORIS()
     print(colored("Logging into communication server...", 'yellow'))
     time.sleep(5)
     pg.write('sales')
     pg.press('enter')
     print(colored("Logging into STORIS with stored info...", 'yellow'))
-    time.sleep(5)
+    time.sleep(10)
     pg.write(str(df.loc[0].user))
     pg.press('tab')
     pg.write(str(df.loc[0].password))
@@ -53,10 +65,21 @@ def initilizeSTORIS():
     pg.press('tab')
     pg.press('enter')
     print(colored("Putting STORIS in background...", 'yellow'))
+    time.sleep(3)
+    clickSTORIS()
     time.sleep(1)
-    pg.moveTo((width / 2) - 400, height - 25)  # Screen position for STORIS
+    return 0
+
+
+def clickRunReport():
+    """
+    This will click the run report tab on STORIS
+    :return:
+    """
+    width, height = pg.size()
+    pg.moveTo((width / 2) - 800, height / 2 + 5)  # Screen position for run report
     pg.click()
-    time.sleep(1)
+    pg.click()
     return 0
 
 
@@ -67,8 +90,7 @@ def cleanUpGui():
     """
     width, height = pg.size()
     print(colored("\nCLOSING STORIS...", 'red'))
-    pg.moveTo((width / 2) - 400, height - 24)  # Screen position for STORIS
-    pg.rightClick()
+    clickSTORIS()
     pg.moveRel(0,-25)
     pg.click()
     time.sleep(.5)
@@ -86,12 +108,9 @@ def runReport():
     """
     width, height = pg.size()
     df = pd.read_csv(str(Path(__file__).resolve().parent)+'\settings.csv')
-    pg.moveTo((width / 2) - 400, height - 25)  # Screen position for STORIS
-    pg.click()
+    clickSTORIS()
     print(colored("Running ONHAND Report...", 'yellow'))
-    pg.moveTo((width / 2) - 550, height / 2 - 68)  # Screen position for run report
-    pg.click()
-    pg.click()
+    clickRunReport()
     time.sleep(3)
     pg.press('tab')
     pg.press('tab')
@@ -111,13 +130,10 @@ def runReport():
     print(colored("\n\t->ONHAND Report Generated Successfully\n", 'green'))
     pg.press('esc')
     time.sleep(1.5)
-    pg.moveTo((width / 2) - 400, height - 25)  # Screen position for STORIS
-    pg.click()
+    clickSTORIS()
     pg.click()
     print(colored("Running FDNEX1 Report...", 'yellow'))
-    pg.moveTo((width / 2) - 550, height / 2 - 68)  # Screen position for run report
-    pg.click()
-    pg.click()
+    clickRunReport()
     time.sleep(3)
     pg.press('tab')
     pg.press('tab')
@@ -271,7 +287,7 @@ def mainFileHandle(onhand, fdnex):
         # print(onhand) This prints the DataFrame may keep this for an option in settings
         print(colored("Attempting to export in stock SKUs to file location (" + str(df.loc[0].epath) + "\instock\storisSTOCK " + str(current_time.month)
                 + "." + str(current_time.day) + "." + str(current_time.year)[2:4] + ".csv" + ")...", 'yellow'))
-        SKUs.to_csv(str(df.loc[0].epath) + "\storisSTOCK " + str(current_time.month) + "." + str(current_time.day)
+        SKUs.to_csv(str(df.loc[0].epath) + "\instock\storisSTOCK " + str(current_time.month) + "." + str(current_time.day)
                       + "." + str(current_time.year)[2:4] + ".csv", encoding='utf-8', index=False)
         print(colored("\t->File created successfully!\n", 'green'))
         deleteFiles()
@@ -320,8 +336,7 @@ def closeSTORIS():
     :return:
     """
     width, height = pg.size()
-    pg.moveTo((width / 2) - 400, height - 24)  # Screen position for STORIS
-    pg.rightClick()
+    clickSTORIS()
     pg.moveRel(0, -25)
     pg.click()
     return 0
@@ -503,6 +518,10 @@ def main():
             print(colored("\nRunning full webiste update...\n", 'blue'))
             fullWebsiteUpdate()
 
+        elif selection == "C" or selection == "c":
+            print(colored("\nChecking 24 hour stock change...\n", 'blue'))
+            checkChanges()
+
         elif selection == "H" or selection == "h":
             print(colored("\n\t\t\t\tHelp for STORIS API\n"
                           "\t-----------------------------------------------------------------------------------\n",
@@ -511,7 +530,7 @@ def main():
 
         elif selection == "C" or selection == "c":
             print(colored("\nCleaning STORIS API...\n", 'yellow'))
-            cleanUpGui()
+            print(cleanUpGui())
 
         elif selection == "E" or selection == "e":
             print(colored("\nExporting single report...\n", 'yellow'))
