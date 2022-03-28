@@ -12,10 +12,13 @@ import sys
 import time
 import datetime
 import os
+from os.path import exists
+
 import colorama
 import pyautogui as pg
 from pathlib import Path
 from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -26,6 +29,8 @@ from termcolor import colored
 
 import pandas as pd
 pd.options.mode.chained_assignment = None
+
+import psutil
 
 from floorstock import *
 
@@ -46,6 +51,11 @@ def initilizeSTORIS():
     This will ensure STORIS is set up and on the report page
     :return:
     """
+    boi = 0
+    if "StorisSCiX.exe" in (p.name() for p in psutil.process_iter()) and boi == 0:
+        closeSTORIS()
+        boi += 1
+    time.sleep(3)
     df = pd.read_csv(str(Path(__file__).resolve().parent)+'\settings.csv')
     print(colored("\t->Ensure STORIS is logged on to a user who have the privileges to run a report", 'blue'))
     width, height = pg.size()
@@ -71,6 +81,19 @@ def initilizeSTORIS():
     return 0
 
 
+def closeSTORIS():
+    """
+
+    :return:
+    """
+    width, height = pg.size()
+    pg.moveTo((width / 2) - 100, height - 25)  # Screen position for STORIS
+    pg.rightClick()
+    pg.moveRel(0, -50)
+    pg.click()
+    return 0
+
+
 def clickRunReport():
     """
     This will click the run report tab on STORIS
@@ -83,21 +106,13 @@ def clickRunReport():
     return 0
 
 
-def cleanUpGui():
+def validationRerun():
     """
-    Initialize can run rouge and mess up the rest of the program this will close STORIS and initialize again
-    :return: Nothing
+
+    :return:
     """
-    width, height = pg.size()
-    print(colored("\nCLOSING STORIS...", 'red'))
-    clickSTORIS()
-    pg.moveRel(0,-25)
-    pg.click()
-    time.sleep(.5)
-    pg.moveTo((width / 2) + 607, (height/2) - 385)  # Screen position for End Button STORIS
-    pg.click()
-    time.sleep(3)
     initilizeSTORIS()
+    runReport()
     return 0
 
 
@@ -108,6 +123,9 @@ def runReport():
     """
     width, height = pg.size()
     df = pd.read_csv(str(Path(__file__).resolve().parent)+'\settings.csv')
+    if exists(str(df.loc[0].rpath) + "\FDNEX1.csv") or exists(str(df.loc[0].rpath) + "\ONHAND.csv"):
+        deleteFiles()
+        print(colored("Files were not deleted issue with last iteration"), 'red')
     clickSTORIS()
     print(colored("Running ONHAND Report...", 'yellow'))
     clickRunReport()
@@ -143,7 +161,7 @@ def runReport():
     pg.write('fdnexport1')
     pg.press('tab')
     pg.press('enter')
-    time.sleep(1.5)
+    time.sleep(3)
     pg.press('enter')
     time.sleep(1)
     print(colored("FDNEX Exporting:", 'cyan'))
@@ -176,7 +194,8 @@ def scrapeFiles(autoRun):
         onhand.to_csv(onhandcsv, index=None, header=True)
         onhand = onhand.dropna(how='all')  # how="all" only deletes the FULLY empty rows
     except (FileNotFoundError, PermissionError):
-        print(colored("ERROR:  " + str(onhandxlsx) + " NOT FOUND OR IS IN USE", 'red'))
+        print(colored("ERROR:  " + str(onhandxlsx) + " NOT FOUND OR IS IN USE\nRETRYING OPERATION", 'red'))
+        validationRerun()
         runit = False
     try:
         fdnex = pd.read_excel(fdnexxlsx)
@@ -184,7 +203,8 @@ def scrapeFiles(autoRun):
         fdnex = fdnex.dropna(how='all')  # how="all" only deletes the FULLY empty rows
         print(colored("Deleting all empty rows...", 'yellow'))
     except (FileNotFoundError, PermissionError):
-        print(colored("ERROR:  " + str(fdnexxlsx) + " NOT FOUND OR IS IN USE", 'red'))
+        print(colored("ERROR:  " + str(fdnexxlsx) + " NOT FOUND OR IS IN USE\nRETRYING OPERATION", 'red'))
+        validationRerun()
         runit = False
     if runit:
         mainFileHandle(onhand, fdnex)
@@ -201,6 +221,8 @@ def deleteFiles():
     os.remove(str(df.loc[0].rpath) + "\ONHAND.csv")
     os.remove(str(df.loc[0].rpath) + "\FDNEX1.xlsx")
     os.remove(str(df.loc[0].rpath) + "\ONHAND.xlsx")
+    os.remove(str(df.loc[0].rpath) + "\FDNEX1.xml")
+    os.remove(str(df.loc[0].rpath) + "\ONHAND.xml")
     return 0
 
 
@@ -221,13 +243,31 @@ def getLocations(row, fdnex):
     return locations2
 
 
-def salesInStockMR(onhand):
+def createStocks(fdnex, df, current_time):
     """
-    Takes the merged onhand report from mainFileHandle and compares it to the days before and sends an email
-    with items that went out of stock and items that came into stock
-    :param onhand: The dataframe made from onhand
-    :return: Nothing
+
+    :param fdnex:
+    :return:
     """
+    henny = fdnex[(fdnex.Whse == 12)]
+    greece = fdnex[(fdnex.Whse == 10)]
+    warehouse = fdnex[(fdnex.Whse == 88)]
+    henny.insert(3, 'Quantity', 1, True)
+    greece.insert(3, 'Quantity', 1, True)
+    warehouse.insert(3, 'Quantity', 1, True)
+    henny2 = henny.groupby(henny['Product']).aggregate({'Product' : 'first', 'Vendor' : 'first', 'Quantity' : 'sum' })
+    greece2 = greece.groupby(greece['Product']).aggregate({'Product' : 'first', 'Vendor' : 'first', 'Quantity': 'sum'})
+    warehouse2 = warehouse.groupby(warehouse['Product']).aggregate({'Product': 'first', 'Vendor': 'first', 'Quantity': 'sum'})
+    try:
+        henny2.to_csv(str(df.loc[0].epath) + "\showroomstock\henny" + str(current_time.month) + "." + str(current_time.day)
+                      + "." + str(current_time.year)[2:4] + ".csv", encoding='utf-8', index=False)
+        greece2.to_csv(str(df.loc[0].epath) + "\showroomstock\greece " + str(current_time.month) + "." + str(current_time.day)
+                  + "." + str(current_time.year)[2:4] + ".csv", encoding='utf-8', index=False)
+        warehouse2.to_csv(
+            str(df.loc[0].epath) + "\showroomstock\warehouse " + str(current_time.month) + "." + str(current_time.day)
+            + "." + str(current_time.year)[2:4] + ".csv", encoding='utf-8', index=False)
+    except PermissionError:
+        print("Files are open")
     return 0
 
 
@@ -242,6 +282,9 @@ def mainFileHandle(onhand, fdnex):
     current_time = datetime.datetime.now()
     print(colored("Deleting all un-needed locations", 'yellow'))
     fdnex = fdnex[(fdnex.Whse == 10) | (fdnex.Whse == 12) | (fdnex.Whse == 88) | (fdnex.Product == '.*-SO')]
+    fdnex2 = fdnex.groupby(fdnex['Product']).aggregate({'Product': 'first'})
+    createStocks(fdnex, df, current_time)
+    return 0
     print(colored("Creating Net Available", 'yellow'))
     onhand['Net Available'] = onhand['Qty On Hand'] - onhand['Qty Resvd']
     print(colored("Deleting all not in stock items...", 'yellow'))
@@ -249,8 +292,6 @@ def mainFileHandle(onhand, fdnex):
     onhand['Location'] = onhand.apply(lambda row: getLocations(row.Product, fdnex), axis=1)
     onhand['Location'].replace('', None, inplace=True)
     onhand.dropna(subset=['Location'], inplace=True)
-    getLocations("18SUV5-CH", fdnex)
-
     SKUs = onhand.pop('Product')
     VendMod = onhand.pop('Vend Mod')
     one = onhand.pop('Description')
@@ -306,6 +347,12 @@ def websiteUploader():
     :return: Nothing
     """
     df = pd.read_csv(str(Path(__file__).resolve().parent) + '\settings.csv')
+    current_time = datetime.datetime.now()
+    if exists("\storis " + str(current_time.month) + "." + str(current_time.day)
+                      + "." + str(current_time.year)[2:4] + ".csv"):
+        pass
+    else:
+        print(colored("ERROR! NO FILE FOR UPLOAD", 'red'))
     rgBackend = "https://admin.furnituredealer.net/login.aspx"
     current_time = datetime.datetime.now()
     chrome_options = Options()
@@ -326,19 +373,17 @@ def websiteUploader():
                 + "." + str(current_time.day) + "." + str(current_time.year)[2:4] + ".csv"))
     time.sleep(.5)
     driver.find_element(by=By.NAME, value="ctl00$MainContent$ctl00").click()
-    driver.close()
-    return 0
 
+    try:
+        success = driver.find_element(by=By.XPATH, value = '//*[@id="ctl00_MainContent_SuccessPanel"]/div[1]').text
+        success2 = driver.find_element(by=By.XPATH, value = '//*[@id="ctl00_MainContent_SuccessPanel"]/div[2]').text
+        print("-----------------------------------\n\n\n\n")
+        print(colored(success + '\n\n' + success2, 'green'))
+        driver.close()
+    except(NoSuchElementException):
+        driver.close()
+        websiteUploader()
 
-def closeSTORIS():
-    """
-
-    :return:
-    """
-    width, height = pg.size()
-    clickSTORIS()
-    pg.moveRel(0, -25)
-    pg.click()
     return 0
 
 
@@ -365,7 +410,7 @@ def runLogic():
     df = pd.read_csv(str(Path(__file__).resolve().parent)+'\settings.csv')
     loop = True
     while loop:
-        cleanUpGui()
+        initilizeSTORIS()
         time.sleep(1)
         runReport()
         scrapeFiles(True)
@@ -527,10 +572,6 @@ def main():
                           "\t-----------------------------------------------------------------------------------\n",
                           'blue'))
             help(False)
-
-        elif selection == "C" or selection == "c":
-            print(colored("\nCleaning STORIS API...\n", 'yellow'))
-            print(cleanUpGui())
 
         elif selection == "E" or selection == "e":
             print(colored("\nExporting single report...\n", 'yellow'))
