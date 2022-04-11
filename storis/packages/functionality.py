@@ -435,8 +435,10 @@ def websiteUploader():
         success2 = driver.find_element(by=By.XPATH, value = '//*[@id="ctl00_MainContent_SuccessPanel"]/div[2]').text
         print("-----------------------------------\n\n\n\n")
         print(colored(success + '\n\n' + success2, 'green'))
+        emailWebsiteUpload(True, success2)
         driver.close()
     except(NoSuchElementException):
+        emailWebsiteUpload(False, "IDK BRO")
         driver.close()
         websiteUploader()
 

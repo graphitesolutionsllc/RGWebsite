@@ -107,3 +107,37 @@ def emailChanges(intoday, outtoday):
     except:
         print('Something went wrong...')
     return 0
+
+def emailWebsiteUpload(success, message):
+    """
+    Sends a confirmation email to the admin to alert him of any changes
+    :return:
+    """
+    user = "dduffy385@gmail.com"
+    pwd = "Pushthebutton8*"
+    """ "gmanzek@rubygordon.com", "tmichaud@rubygordon.com" """
+    FROM = "dduffy385@gmail.com"
+    TO = ["dduffy@rubygordon.com"]
+    SUBJECT = "Website upload"
+    TEXT = ""
+
+    if success:
+        TEXT = "SUCCESS:\n\t The website has been updated successfully\n\n" + message
+    else:
+        TEXT = "ERROR:\n\t THE WEBSITE HAS NOT BEEN UPDATED\n\n" + message
+
+    # Prepare actual message
+    message = """From: %s\nTo: %s\nSubject: %s\n\n%s
+            """ % (FROM, "".join(TO), SUBJECT, TEXT)
+
+    try:
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.ehlo()
+        server.starttls()
+        server.login(user, pwd)
+        server.sendmail(FROM, TO, message)
+        server.close()
+    except:
+        print('Something went wrong...')
+
+    return 0
