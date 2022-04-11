@@ -81,6 +81,17 @@ def initilizeSTORIS():
     return 0
 
 
+def storisCheck():
+    """
+    Checks if storis is running
+    :return:
+    """
+    if "StorisSCiX.exe" in (p.name() for p in psutil.process_iter()):
+        return True
+    else:
+        return False
+
+
 def closeSTORIS():
     """
 
@@ -122,6 +133,8 @@ def runReport():
     :return: Nothing
     """
     width, height = pg.size()
+    if ~storisCheck():
+        initilizeSTORIS()
     df = pd.read_csv(str(Path(__file__).resolve().parent)+'\settings.csv')
     if exists(str(df.loc[0].rpath) + "\FDNEX1.csv") or exists(str(df.loc[0].rpath) + "\ONHAND.csv"):
         deleteFiles()
@@ -438,6 +451,7 @@ def fullWebsiteUpdate():
     initilizeSTORIS()
     runReport()
     scrapeFiles(True)
+    checkChanges()
     websiteUploader()
     closeSTORIS()
     return 0

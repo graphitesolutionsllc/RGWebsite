@@ -25,13 +25,18 @@ def checkChanges():
     last_time = str(last_time.month) + "." + str(last_time.day) + "." + str(last_time.year)[2:4]
 
     try:
-        today = pd.read_csv(str(df.loc[0].epath) + "\instock\storisSTOCK " + current_time + ".csv")
+        today = pd.read_csv(str(df.loc[0].epath) + "\showroomstock\warehouse " + current_time + ".csv")
+        del today['Quantity']
+        today = today[~today.Product.str.endswith("SO")]
     except(FileNotFoundError):
         print("Todays Stock Skus have not been generated yet")
         return 0
 
     try:
-         yesterday = pd.read_csv(str(df.loc[0].epath) + "\instock\storisSTOCK " + last_time + ".csv")
+        print("\instock\storisSTOCK " + last_time + ".csv")
+        yesterday = pd.read_csv(str(df.loc[0].epath) + "\showroomstock\warehouse " + last_time + ".csv")
+        del yesterday['Quantity']
+        yesterday = yesterday[~yesterday.Product.str.endswith("SO")]
     except(FileNotFoundError):
         print("Yesterdays Stock Skus are not in the directory")
         return 0
@@ -47,21 +52,57 @@ def checkChanges():
     emailChanges(intoday, outtoday)
     return 0
 
+
+def makeMessage(intoday, outtoday):
+    """
+    Creates the string for the message
+    :param intoday:
+    :param outtoday:
+    :return:
+    """
+    message = "Good morning all,\n\n\tBelow is the stock changes for the last 24 hours, please confirm this information" \
+              "as this is a new system and could have issues.\n"
+    if len(intoday) != 0:
+        message = message + "\nIn Stock Today:\n"
+        for x in intoday:
+            message = message + x + "\n"
+    elif len(intoday) == 0:
+        message = message + "\nNOTHING NEW IN STOCK TODAY\n"
+    if len(outtoday) != 0:
+        message = message + "\nOut of Stock Today:\n"
+        print(len(outtoday))
+        for x in outtoday:
+            message = message + x + "\n"
+    elif len(outtoday) == 0:
+        message = message + "\nNOTHING NEW OUT OF STOCK TODAY"
+    return message
+
+
 def emailChanges(intoday, outtoday):
     """
 
     :return:
     """
-    sent_from = "dduffy385@gmail.com"
-    to = "dmd9042@gmail.com"
-    #intoday = str(intoday['Product'].values.tolist())
-    outtoday = str(outtoday['Product'].values.tolist())
+    intoday = intoday['Product'].values.tolist()
+    outtoday = outtoday['Product'].values.tolist()
+    user = "dduffy385@gmail.com"
+    pwd = "Pushthebutton8*"
+    """ "gmanzek@rubygordon.com", "tmichaud@rubygordon.com" """
+    FROM = "dduffy385@gmail.com"
+    TO = ["dmd9042@gmail.com"]
+    SUBJECT = "Daily Stock Update"
+    TEXT = makeMessage(intoday, outtoday)
+
+    # Prepare actual message
+    message = """From: %s\nTo: %s\nSubject: %s\n\n%s
+        """ % (FROM, "".join(TO), SUBJECT, TEXT)
 
     try:
-        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+        server = smtplib.SMTP("smtp.gmail.com", 587)
         server.ehlo()
-        server.login("dduffy385@gmail.com", "Pushthebutton8*")
-        server.send(to,"Daily Stock Update", intoday.to_string(index=False))
+        server.starttls()
+        server.login(user, pwd)
+        server.sendmail(FROM, TO, message)
         server.close()
     except:
         print('Something went wrong...')
