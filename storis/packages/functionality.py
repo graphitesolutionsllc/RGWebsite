@@ -12,7 +12,7 @@ import sys
 import time
 import datetime
 import os
-from os.path import exists
+from os.path import exists, isfile
 
 import colorama
 import pyautogui as pg
@@ -226,6 +226,23 @@ def deleteFiles():
     return 0
 
 
+def checkFile(row, file, onhand):
+    """
+    i have no idea what this does
+    :param row:
+    :param file:
+    :return:
+    """
+    try:
+        net = onhand.loc[onhand['Product'] == row]['Net Available'].values[0]
+        if (file['Product'].isin([row]).any().any()) and (net != 0):
+            return 1
+        else:
+            return 0
+    except(IndexError):
+        return 0
+
+
 def getLocations(row, fdnex):
     """
     Returns a list of Locations for a sku
@@ -243,7 +260,31 @@ def getLocations(row, fdnex):
     return locations2
 
 
-def createStocks(fdnex, df, current_time):
+def createFullFloorStockSheet(onhand):
+    """
+
+    :return:
+    """
+    df = pd.read_csv(str(Path(__file__).resolve().parent) + '\settings.csv')
+    current_time = datetime.datetime.now()
+    current_time = str(current_time.month) + "." + str(current_time.day) + "." + str(current_time.year)[2:4]
+    try:
+        henny = pd.read_csv(str(df.loc[0].epath) + "\showroomstock\henny " + current_time + ".csv")
+        greece = pd.read_csv(str(df.loc[0].epath) + "\showroomstock\greece " + current_time + ".csv")
+        warehouse = pd.read_csv(str(df.loc[0].epath) + "\showroomstock\warehouse " + current_time + ".csv")
+    except(FileNotFoundError, PermissionError):
+        print("Nah brah")
+    henny['instock'] = henny.apply(lambda row: checkFile(row.Product, warehouse, onhand), axis=1)
+    greece['instock'] = greece.apply(lambda row: checkFile(row.Product, warehouse, onhand), axis=1)
+    henny.to_csv(str(df.loc[0].epath) + "\showroomstock\FULLhenny " + current_time + ".csv", encoding='utf-8', index=False)
+    greece.to_csv(
+        str(df.loc[0].epath) + "\showroomstock\FULLgreece " + current_time + ".csv", encoding='utf-8', index=False)
+    print(henny)
+    print(greece)
+    return 0
+
+
+def createStocks(fdnex, onhand, df, current_time):
     """
 
     :param fdnex:
@@ -259,13 +300,14 @@ def createStocks(fdnex, df, current_time):
     greece2 = greece.groupby(greece['Product']).aggregate({'Product' : 'first', 'Vendor' : 'first', 'Quantity': 'sum'})
     warehouse2 = warehouse.groupby(warehouse['Product']).aggregate({'Product': 'first', 'Vendor': 'first', 'Quantity': 'sum'})
     try:
-        henny2.to_csv(str(df.loc[0].epath) + "\showroomstock\henny" + str(current_time.month) + "." + str(current_time.day)
+        henny2.to_csv(str(df.loc[0].epath) + "\showroomstock\henny " + str(current_time.month) + "." + str(current_time.day)
                       + "." + str(current_time.year)[2:4] + ".csv", encoding='utf-8', index=False)
         greece2.to_csv(str(df.loc[0].epath) + "\showroomstock\greece " + str(current_time.month) + "." + str(current_time.day)
                   + "." + str(current_time.year)[2:4] + ".csv", encoding='utf-8', index=False)
         warehouse2.to_csv(
             str(df.loc[0].epath) + "\showroomstock\warehouse " + str(current_time.month) + "." + str(current_time.day)
             + "." + str(current_time.year)[2:4] + ".csv", encoding='utf-8', index=False)
+        createFullFloorStockSheet(onhand)
     except PermissionError:
         print("Files are open")
     return 0
@@ -283,10 +325,9 @@ def mainFileHandle(onhand, fdnex):
     print(colored("Deleting all un-needed locations", 'yellow'))
     fdnex = fdnex[(fdnex.Whse == 10) | (fdnex.Whse == 12) | (fdnex.Whse == 88) | (fdnex.Product == '.*-SO')]
     fdnex2 = fdnex.groupby(fdnex['Product']).aggregate({'Product': 'first'})
-    createStocks(fdnex, df, current_time)
-    return 0
     print(colored("Creating Net Available", 'yellow'))
     onhand['Net Available'] = onhand['Qty On Hand'] - onhand['Qty Resvd']
+    createStocks(fdnex, onhand, df, current_time)
     print(colored("Deleting all not in stock items...", 'yellow'))
     print(colored("Finding locations for in stock items...", 'yellow'))
     onhand['Location'] = onhand.apply(lambda row: getLocations(row.Product, fdnex), axis=1)
@@ -348,11 +389,13 @@ def websiteUploader():
     """
     df = pd.read_csv(str(Path(__file__).resolve().parent) + '\settings.csv')
     current_time = datetime.datetime.now()
-    if exists("\storis " + str(current_time.month) + "." + str(current_time.day)
-                      + "." + str(current_time.year)[2:4] + ".csv"):
+    file_time = str(current_time.month) + "." + str(current_time.day) + "." + str(current_time.year)[2:4]
+    if isfile(str(df.loc[0].epath)+ "\storis " + file_time + ".csv"):
         pass
     else:
         print(colored("ERROR! NO FILE FOR UPLOAD", 'red'))
+        fullWebsiteUpdate()
+        return 0
     rgBackend = "https://admin.furnituredealer.net/login.aspx"
     current_time = datetime.datetime.now()
     chrome_options = Options()
