@@ -53,6 +53,26 @@ def checkChanges():
     return 0
 
 
+def sendMessage(user, pwd, FROM, TO, message):
+    """
+    Sends the email
+    :param FROM:
+    :param TO:
+    :param MESSAGE:
+    :return:
+    """
+    try:
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.ehlo()
+        server.starttls()
+        server.login(user, pwd)
+        server.sendmail(FROM, TO, message)
+        server.close()
+    except:
+        print('Something went wrong...')
+    return 0
+
+
 def makeMessage(intoday, outtoday):
     """
     Creates the string for the message
@@ -97,15 +117,7 @@ def emailChanges(intoday, outtoday):
     message = """From: %s\nTo: %s\nSubject: %s\n\n%s
         """ % (FROM, "".join(TO), SUBJECT, TEXT)
 
-    try:
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.ehlo()
-        server.starttls()
-        server.login(user, pwd)
-        server.sendmail(FROM, TO, message)
-        server.close()
-    except:
-        print('Something went wrong...')
+    sendMessage(user, pwd, FROM, TO, message)
     return 0
 
 def emailWebsiteUpload(success, message):
@@ -130,14 +142,6 @@ def emailWebsiteUpload(success, message):
     message = """From: %s\nTo: %s\nSubject: %s\n\n%s
             """ % (FROM, "".join(TO), SUBJECT, TEXT)
 
-    try:
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.ehlo()
-        server.starttls()
-        server.login(user, pwd)
-        server.sendmail(FROM, TO, message)
-        server.close()
-    except:
-        print('Something went wrong...')
+    sendMessage(user, pwd, FROM, TO, message)
 
     return 0
