@@ -32,7 +32,7 @@ pd.options.mode.chained_assignment = None
 
 import psutil
 
-from .floorstock import *
+from floorstock import *
 
 
 def clickSTORIS():

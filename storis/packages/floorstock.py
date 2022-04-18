@@ -9,8 +9,29 @@ from pathlib import Path
 import pandas as pd
 import datetime
 import yagmail
+from urllib3.util import current_time
 
 pd.options.mode.chained_assignment = None
+
+
+def checkNet(product, onhand):
+    """
+
+    :param product:
+    :return:
+    """
+    df = pd.read_csv(str(Path(__file__).resolve().parent) + '\settings.csv')
+    current_time = datetime.datetime.now()
+    onhand = onhand[onhand['Product'] == product]
+    try:
+        row = onhand.iloc[0]
+        if row.int == 0:
+            return 0
+        else:
+            return 1
+    except:
+        pass
+    return 0
 
 
 def checkChanges():
@@ -20,6 +41,8 @@ def checkChanges():
     """
     df = pd.read_csv(str(Path(__file__).resolve().parent) + '\settings.csv')
     current_time = datetime.datetime.now()
+    onhand = pd.read_csv(str(df.loc[0].epath) + "\storis " + str(current_time.month) + "." + str(current_time.day) + "." \
+                         + str(current_time.year)[2:4] + ".csv")
     last_time = datetime.datetime.now() - datetime.timedelta(days=1)
     current_time = str(current_time.month) + "." + str(current_time.day) + "." + str(current_time.year)[2:4]
     last_time = str(last_time.month) + "." + str(last_time.day) + "." + str(last_time.year)[2:4]
@@ -27,7 +50,9 @@ def checkChanges():
     try:
         today = pd.read_csv(str(df.loc[0].epath) + "\showroomstock\warehouse " + current_time + ".csv")
         del today['Quantity']
-        today = today[~today.Product.str.endswith("SO")]
+        today['Net Available'] = today.apply(lambda row: checkNet(row.Product, onhand), axis=1)
+        today = today[(~today.Product.str.endswith("SO"))]
+        today = today[today['Net Available'] != 0]
     except(FileNotFoundError):
         print("Todays Stock Skus have not been generated yet")
         return 0
@@ -36,7 +61,9 @@ def checkChanges():
         print("\instock\storisSTOCK " + last_time + ".csv")
         yesterday = pd.read_csv(str(df.loc[0].epath) + "\showroomstock\warehouse " + last_time + ".csv")
         del yesterday['Quantity']
-        yesterday = yesterday[~yesterday.Product.str.endswith("SO")]
+        yesterday['Net Available'] = yesterday.apply(lambda row: checkNet(row.Product, onhand), axis=1)
+        yesterday = yesterday[(~yesterday.Product.str.endswith("SO"))]
+        yesterday = yesterday[yesterday['Net Available'] != 0]
     except(FileNotFoundError):
         print("Yesterdays Stock Skus are not in the directory")
         return 0
