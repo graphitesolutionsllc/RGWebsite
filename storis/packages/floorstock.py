@@ -52,7 +52,7 @@ def checkChanges():
         del today['Quantity']
         today['Net Available'] = today.apply(lambda row: checkNet(row.Product, onhand), axis=1)
         today = today[(~today.Product.str.endswith("SO"))]
-        today = today[today['Net Available'] != 0]
+        #today = today[today['Net Available'] != 0]
     except(FileNotFoundError):
         print("Todays Stock Skus have not been generated yet")
         return 0
@@ -63,7 +63,7 @@ def checkChanges():
         del yesterday['Quantity']
         yesterday['Net Available'] = yesterday.apply(lambda row: checkNet(row.Product, onhand), axis=1)
         yesterday = yesterday[(~yesterday.Product.str.endswith("SO"))]
-        yesterday = yesterday[yesterday['Net Available'] != 0]
+        #yesterday = yesterday[yesterday['Net Available'] != 0]
     except(FileNotFoundError):
         print("Yesterdays Stock Skus are not in the directory")
         return 0
@@ -72,6 +72,7 @@ def checkChanges():
     df = df.assign(intoday=df.Product.isin(today.Product).astype(int))
     df = df.assign(outtoday=df.Product.isin(yesterday.Product).astype(int))
     intoday = df.loc[df['intoday'] == 1]
+    intoday = intoday[intoday['Net Available'] != 0]
     outtoday = df.loc[df['outtoday'] == 1]
     print(intoday)
     print("---------------------------\n")
@@ -108,7 +109,7 @@ def makeMessage(intoday, outtoday):
     :return:
     """
     message = "Good morning all,\n\n\tBelow is the stock changes for the last 24 hours, please confirm this information" \
-              "as this is a new system and could have issues.\n"
+              " as this is a new system and could have issues.\n"
     if len(intoday) != 0:
         message = message + "\nIn Stock Today:\n"
         for x in intoday:
@@ -136,7 +137,7 @@ def emailChanges(intoday, outtoday):
     pwd = "Pushthebutton8*"
     """ "gmanzek@rubygordon.com", "tmichaud@rubygordon.com" """
     FROM = "dduffy385@gmail.com"
-    TO = ["dmd9042@gmail.com"]
+    TO = ["dduffy@rubygordon.com", "gmanzek@rubygordon.com", "tmichaud@rubygordon.com", "ghull@rubygordon.com"]
     SUBJECT = "Daily Stock Update"
     TEXT = makeMessage(intoday, outtoday)
 
@@ -156,7 +157,7 @@ def emailWebsiteUpload(success, message):
     pwd = "Pushthebutton8*"
     """ "gmanzek@rubygordon.com", "tmichaud@rubygordon.com" """
     FROM = "dduffy385@gmail.com"
-    TO = ["dduffy@rubygordon.com"]
+    TO = ["dduffy@rubygordon.com", "cquadrozzi@rubygordon.com"]
     SUBJECT = "Website upload"
     TEXT = ""
 

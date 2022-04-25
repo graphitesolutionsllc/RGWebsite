@@ -230,12 +230,16 @@ def deleteFiles():
     :return: Nothing
     """
     df = pd.read_csv(str(Path(__file__).resolve().parent)+'\settings.csv')
-    os.remove(str(df.loc[0].rpath) + "\FDNEX1.csv")
-    os.remove(str(df.loc[0].rpath) + "\ONHAND.csv")
-    os.remove(str(df.loc[0].rpath) + "\FDNEX1.xlsx")
-    os.remove(str(df.loc[0].rpath) + "\ONHAND.xlsx")
-    os.remove(str(df.loc[0].rpath) + "\FDNEX1.xml")
-    os.remove(str(df.loc[0].rpath) + "\ONHAND.xml")
+    try:
+
+        os.remove(str(df.loc[0].rpath) + "\FDNEX1.csv")
+        os.remove(str(df.loc[0].rpath) + "\ONHAND.csv")
+        os.remove(str(df.loc[0].rpath) + "\FDNEX1.xlsx")
+        os.remove(str(df.loc[0].rpath) + "\ONHAND.xlsx")
+        os.remove(str(df.loc[0].rpath) + "\FDNEX1.xml")
+        os.remove(str(df.loc[0].rpath) + "\ONHAND.xml")
+    except(FileNotFoundError):
+        print("NO FILES")
     return 0
 
 
