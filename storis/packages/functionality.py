@@ -8,15 +8,12 @@ using the copy to scrape data, one finished with the scrape this program will de
 of this will be a .csv file to feed information to the back end of our website for inventory
 """
 #!/usr/bin/env python3
-import sys
 import time
-import datetime
 import os
 from os.path import exists, isfile
 
 import colorama
 import pyautogui as pg
-from pathlib import Path
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.chrome.options import Options
@@ -71,6 +68,7 @@ def initilizeSTORIS():
     pg.press('tab')
     pg.write(str(df.loc[0].password))
     pg.press('tab')
+    time.sleep(.5)
     pg.write('10')
     pg.press('tab')
     pg.press('enter')
@@ -84,7 +82,7 @@ def initilizeSTORIS():
 def storisCheck():
     """
     Checks if storis is running
-    :return:
+    :return: Nothing
     """
     if "StorisSCiX.exe" in (p.name() for p in psutil.process_iter()):
         return True
@@ -94,8 +92,8 @@ def storisCheck():
 
 def closeSTORIS():
     """
-
-    :return:
+    Closes the storis application using pyautogui
+    :return: Nothing
     """
     width, height = pg.size()
     pg.moveTo((width / 2) - 100, height - 25)  # Screen position for STORIS
@@ -119,8 +117,8 @@ def clickRunReport():
 
 def validationRerun():
     """
-
-    :return:
+    Acts as a failsafe to restart the run sequence in case of any issues during the auto gui sequence
+    :return: Nothing
     """
     initilizeSTORIS()
     runReport()
@@ -186,13 +184,15 @@ def runReport():
     pg.press('esc')
     print(colored("Placing STORIS in the background...", 'yellow'))
     time.sleep(2)
+    closeSTORIS()
+    time.sleep(2)
     return 0
 
 
 def scrapeFiles(autoRun):
     """
     Grabs the raw file and parse it into the global list of Pieces
-    fileName (String) - Filename holding the raw data to be opened and scraped
+    :param fileName: (String) - Filename holding the raw data to be opened and scraped
     :return: Nothing
     """
     df = pd.read_csv(str(Path(__file__).resolve().parent)+'\settings.csv')
@@ -245,10 +245,11 @@ def deleteFiles():
 
 def checkFile(row, file, onhand):
     """
-    i have no idea what this does
-    :param row:
-    :param file:
-    :return:
+    Checks a row of a pandas dataframe to see if the same product sku is in another file
+    :param row: (Pandas Dataframe) Singular row of a pandas dataframe
+    :param file: (Pandas Dataframe) Similar framed pandas dataframe as 'row'
+    :param onhand: (Pandas Dataframe) Onhand report
+    :return: (Boolean) 1 the file contains the product SKU 0 it does not
     """
     try:
         net = onhand.loc[onhand['Product'] == row]['Net Available'].values[0]
@@ -263,10 +264,10 @@ def checkFile(row, file, onhand):
 def getLocations(row, fdnex):
     """
     Returns a list of Locations for a sku
-    :param sku: The Store SKU for the item
-    :return: a list of integers for location of item
+    :param row: (Pandas Dataframe) Singular row
+    :param sku: (String) The Store SKU for the item
+    :return: (List) Containing integers for location(s) of item
     """
-
     locations = []
     fdnex2 = fdnex.loc[fdnex['Product'] == row].Whse.values.tolist()
     [locations.append(x) for x in fdnex2 if x not in locations]
@@ -279,8 +280,9 @@ def getLocations(row, fdnex):
 
 def createFullFloorStockSheet(onhand):
     """
-
-    :return:
+    This creates full stock sheets of each location by checking to see if floor stock has any inventory in the warehouse
+    :param onhand: (Pandas Dataframe) onhand report
+    :return: Nothing
     """
     df = pd.read_csv(str(Path(__file__).resolve().parent) + '\settings.csv')
     current_time = datetime.datetime.now()
@@ -300,16 +302,19 @@ def createFullFloorStockSheet(onhand):
     henny.to_csv(str(df.loc[0].epath) + "\showroomstock\FULLhenny " + current_time + ".csv", encoding='utf-8', index=False)
     greece.to_csv(
         str(df.loc[0].epath) + "\showroomstock\FULLgreece " + current_time + ".csv", encoding='utf-8', index=False)
-    print(henny)
-    print(greece)
+    #print(henny) for troubleshooting
+    #print(greece)
     return 0
 
 
 def createStocks(fdnex, onhand, df, current_time):
     """
-
-    :param fdnex:
-    :return:
+    This uses the impored dataframes to create seperate .csv files of stock in each location
+    :param fdnex: (Pandas Dataframe) fdnexport1 report
+    :param onhand: (Pandas Dataframe) onhand report
+    :param df: (Pandas Dataframe) settings file
+    :param current_time: (String) current date used for opening files
+    :return: Nothing
     """
     henny = fdnex[(fdnex.Whse == 12)]
     greece = fdnex[(fdnex.Whse == 10)]
@@ -337,9 +342,9 @@ def createStocks(fdnex, onhand, df, current_time):
 def mainFileHandle(onhand, fdnex):
     """
     Handles all of the functionality for reading the datafiles and preparing them for class instancing
-    :param onhand:
-    :param fdnex:
-    :return:
+    :param onhand: (Pandas Dataframe) onhand report
+    :param fdnex: (Pandas Dataframe) fdnexport1 report
+    :return: Nothing
     """
     df = pd.read_csv(str(Path(__file__).resolve().parent)+'\settings.csv')
     current_time = datetime.datetime.now()
@@ -393,7 +398,7 @@ def mainFileHandle(onhand, fdnex):
         SKUs.to_csv(str(df.loc[0].epath) + "\instock\storisSTOCK " + str(current_time.month) + "." + str(current_time.day)
                       + "." + str(current_time.year)[2:4] + ".csv", encoding='utf-8', index=False)
         print(colored("\t->File created successfully!\n", 'green'))
-        #deleteFiles()
+        deleteFiles()
     except PermissionError:
         print(colored("\nERROR: CANNOT SAVE THIS FILE IS CURRENTLY IN USE WITH ANOTHER APPLICATION", 'red'))
         print(colored("Returning to Main Menu in: 5", 'red'))
@@ -455,13 +460,12 @@ def websiteUploader():
 
 def fullWebsiteUpdate():
     """
-
-    :return:
+    This is the sequence for running a full website update, this function allows for changes to the run sequence
+    :return: Nothing
     """
     runReport()
     scrapeFiles(True)
     checkChanges()
-    closeSTORIS()
     websiteUploader()
     return 0
 
@@ -469,8 +473,6 @@ def fullWebsiteUpdate():
 def runLogic():
     """
     Grabbing from settings this will iterate the mainFileHandle function by the time established in the file
-    :param onhand:
-    :param fdnex:
     :return: Nothing
     """
     df = pd.read_csv(str(Path(__file__).resolve().parent)+'\settings.csv')
@@ -543,6 +545,7 @@ def editSettings():
 def help(firstTime):
     """
     Displays the help text and later will include ability to read more documentation
+    :param firstTime: (Boolean) 1 for yes 0 for no
     :return: Nothing
     """
     if firstTime:
@@ -573,8 +576,8 @@ def help(firstTime):
 
 def main():
     """
-
-    :return:
+    Main logic for the cmd user interface
+    :return: Nothing
     """
     x = 0
     last_time = time.time()
