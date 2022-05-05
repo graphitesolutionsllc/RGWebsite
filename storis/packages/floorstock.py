@@ -52,7 +52,6 @@ def checkChanges():
         del today['Quantity']
         today['Net Available'] = today.apply(lambda row: checkNet(row.Product, onhand), axis=1)
         today = today[(~today.Product.str.endswith("SO"))]
-        #today = today[today['Net Available'] != 0]
     except(FileNotFoundError):
         print("Todays Stock Skus have not been generated yet")
         return 0
@@ -63,7 +62,6 @@ def checkChanges():
         del yesterday['Quantity']
         yesterday['Net Available'] = yesterday.apply(lambda row: checkNet(row.Product, onhand), axis=1)
         yesterday = yesterday[(~yesterday.Product.str.endswith("SO"))]
-        #yesterday = yesterday[yesterday['Net Available'] != 0]
     except(FileNotFoundError):
         print("Yesterdays Stock Skus are not in the directory")
         return 0
@@ -74,6 +72,7 @@ def checkChanges():
     intoday = df.loc[df['intoday'] == 1]
     intoday = intoday[intoday['Net Available'] != 0]
     outtoday = df.loc[df['outtoday'] == 1]
+    outtoday = outtoday[outtoday['Net Available'] == 0]
     print(intoday)
     print("---------------------------\n")
     print(outtoday)
@@ -135,7 +134,7 @@ def emailChanges(intoday, outtoday):
     outtoday = outtoday['Product'].values.tolist()
     user = "dduffy385@gmail.com"
     pwd = "Pushthebutton8*"
-    """ "gmanzek@rubygordon.com", "tmichaud@rubygordon.com" """
+    """ "gmanzek@rubygordon.com", "tmichaud@rubygordon.com", "ghull@rubygordon.com" """
     FROM = "dduffy385@gmail.com"
     TO = ["dduffy@rubygordon.com", "gmanzek@rubygordon.com", "tmichaud@rubygordon.com", "ghull@rubygordon.com"]
     SUBJECT = "Daily Stock Update"

@@ -293,6 +293,10 @@ def createFullFloorStockSheet(onhand):
         print("Nah brah")
     henny['instock'] = henny.apply(lambda row: checkFile(row.Product, warehouse, onhand), axis=1)
     greece['instock'] = greece.apply(lambda row: checkFile(row.Product, warehouse, onhand), axis=1)
+    henny = henny[(~henny.Product.str.startswith('T')) & (~henny.Product.str.startswith('A'))
+                  & (~henny.Product.str.startswith('UTR')) & (henny.instock == 1)]
+    greece = greece[(~greece.Product.str.startswith('T')) & (~greece.Product.str.startswith('A'))
+                    & (~greece.Product.str.startswith('UTR')) & (greece.instock == 1)]
     henny.to_csv(str(df.loc[0].epath) + "\showroomstock\FULLhenny " + current_time + ".csv", encoding='utf-8', index=False)
     greece.to_csv(
         str(df.loc[0].epath) + "\showroomstock\FULLgreece " + current_time + ".csv", encoding='utf-8', index=False)
@@ -389,7 +393,7 @@ def mainFileHandle(onhand, fdnex):
         SKUs.to_csv(str(df.loc[0].epath) + "\instock\storisSTOCK " + str(current_time.month) + "." + str(current_time.day)
                       + "." + str(current_time.year)[2:4] + ".csv", encoding='utf-8', index=False)
         print(colored("\t->File created successfully!\n", 'green'))
-        deleteFiles()
+        #deleteFiles()
     except PermissionError:
         print(colored("\nERROR: CANNOT SAVE THIS FILE IS CURRENTLY IN USE WITH ANOTHER APPLICATION", 'red'))
         print(colored("Returning to Main Menu in: 5", 'red'))
@@ -454,12 +458,11 @@ def fullWebsiteUpdate():
 
     :return:
     """
-    initilizeSTORIS()
     runReport()
     scrapeFiles(True)
     checkChanges()
-    websiteUploader()
     closeSTORIS()
+    websiteUploader()
     return 0
 
 
@@ -473,10 +476,9 @@ def runLogic():
     df = pd.read_csv(str(Path(__file__).resolve().parent)+'\settings.csv')
     loop = True
     while loop:
-        initilizeSTORIS()
-        time.sleep(1)
         runReport()
         scrapeFiles(True)
+        checkChanges()
         websiteUploader()
         print(colored("Waiting for set delay (Press ctrl + c to go to main menu): ", 'cyan'))
         for x in range(int(df.loc[0].time), 0, -1):

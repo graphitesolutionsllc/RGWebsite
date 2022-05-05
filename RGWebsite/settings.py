@@ -34,6 +34,7 @@ ALLOWED_HOSTS = [
 
 INSTALLED_APPS = [
     'storis.apps.StorisConfig',
+    'storis.packages.floorstock',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
